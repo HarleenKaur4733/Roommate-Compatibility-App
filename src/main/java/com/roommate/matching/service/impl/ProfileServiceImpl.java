@@ -1,4 +1,4 @@
-package com.roommate.matching.service;
+package com.roommate.matching.service.impl;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import com.roommate.matching.entity.Profile;
 import com.roommate.matching.entity.User;
 import com.roommate.matching.repository.ProfileRepository;
 import com.roommate.matching.repository.UserRepository;
-import com.roommate.matching.security.JwtUtil;
+import com.roommate.matching.service.ProfileService;
 
 import lombok.RequiredArgsConstructor;
 

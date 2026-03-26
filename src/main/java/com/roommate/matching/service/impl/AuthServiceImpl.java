@@ -1,4 +1,4 @@
-package com.roommate.matching.service;
+package com.roommate.matching.service.impl;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,6 +13,8 @@ import com.roommate.matching.entity.User;
 import com.roommate.matching.repository.RefreshTokenRepository;
 import com.roommate.matching.repository.UserRepository;
 import com.roommate.matching.security.JwtUtil;
+import com.roommate.matching.service.AuthService;
+import com.roommate.matching.service.RefreshTokenService;
 
 import lombok.RequiredArgsConstructor;
 
