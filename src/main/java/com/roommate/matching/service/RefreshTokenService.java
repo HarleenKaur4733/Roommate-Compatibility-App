@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.roommate.matching.entity.RefreshToken;
 import com.roommate.matching.entity.User;
@@ -17,8 +18,10 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository repository;
 
+    @Transactional
     public RefreshToken createRefreshToken(User user) {
 
+        System.out.println("Deleting old refresh token for user: " + user.getEmail());
         repository.deleteByUser(user);
 
         RefreshToken token = RefreshToken.builder()
@@ -26,6 +29,7 @@ public class RefreshTokenService {
                 .token(UUID.randomUUID().toString())
                 .expiryDate(LocalDateTime.now().plusDays(7))
                 .build();
+        System.out.println("Creating new refresh token for user: " + user.getEmail());
 
         return repository.save(token);
     }
