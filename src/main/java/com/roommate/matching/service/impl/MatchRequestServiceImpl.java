@@ -19,106 +19,114 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class MatchRequestServiceImpl
-        implements MatchRequestService {
+                implements MatchRequestService {
 
-    private final MatchRequestRepository repository;
+        private final MatchRequestRepository repository;
 
-    private final UserRepository userRepository;
+        private final UserRepository userRepository;
 
-    private User getLoggedInUser() {
+        private User getLoggedInUser() {
 
-        Authentication authentication = SecurityContextHolder
-                .getContext()
-                .getAuthentication();
+                Authentication authentication = SecurityContextHolder
+                                .getContext()
+                                .getAuthentication();
 
-        String email = authentication.getName();
+                String email = authentication.getName();
 
-        return userRepository
-                .findByEmail(email)
-                .orElseThrow();
-    }
-
-    @Override
-    public void sendRequest(Long targetUserId) {
-
-        User sender = getLoggedInUser();
-        System.out.println("Got logged in user: " + sender.getEmail());
-
-        User receiver = userRepository.findById(targetUserId)
-                .orElseThrow();
-        System.out.println("Found target user: " + receiver.getEmail());
-        if (repository.findBySenderAndReceiver(sender, receiver).isPresent()) {
-
-            throw new RuntimeException(
-                    "Request already sent");
+                return userRepository
+                                .findByEmail(email)
+                                .orElseThrow();
         }
 
-        if (sender.getId().equals(receiver.getId())) {
+        @Override
+        public void sendRequest(Long targetUserId) {
 
-            throw new RuntimeException(
-                    "Cannot send request to yourself");
-        }
+                User sender = getLoggedInUser();
+                System.out.println("Got logged in user: " + sender.getEmail());
 
-        MatchRequest request = MatchRequest.builder()
-                .sender(sender)
-                .receiver(receiver)
-                .status(MatchStatus.PENDING)
-                .createdAt(LocalDateTime.now())
-                .build();
-        System.out.println("Sending request to user ID: " + targetUserId);
-        repository.save(request);
-    }
+                User receiver = userRepository.findById(targetUserId)
+                                .orElseThrow();
+                System.out.println("Found target user: " + receiver.getEmail());
 
-    @Override
-    public void acceptRequest(Long requestId) {
+                boolean alreadyExists = repository.findBySenderAndReceiver(sender, receiver)
+                                .filter(req -> req.getStatus() != MatchStatus.REJECTED)
+                                .isPresent()
 
-        MatchRequest request = repository.findById(requestId)
-                .orElseThrow();
-        if (request.getStatus() != MatchStatus.PENDING) {
-
-            throw new RuntimeException(
-                    "Request already processed");
-        }
-        request.setStatus(MatchStatus.ACCEPTED);
-
-        repository.save(request);
-    }
-
-    @Override
-    public void rejectRequest(Long requestId) {
-
-        MatchRequest request = repository.findById(requestId)
-                .orElseThrow();
-        if (request.getStatus() != MatchStatus.PENDING) {
-
-            throw new RuntimeException(
-                    "Request already processed");
-        }
-        request.setStatus(MatchStatus.REJECTED);
-
-        repository.save(request);
-    }
-
-    @Override
-    public List<MatchRequest> getMyRequests() {
-
-        User receiver = getLoggedInUser();
-
-        return repository.findByReceiver(receiver);
-    }
-
-    @Override
-    public List<MatchRequest> getMyConnections() {
-
-        User user = getLoggedInUser();
-
-        return repository.findAll()
-                .stream()
-                .filter(req -> req.getStatus() == MatchStatus.ACCEPTED
-                        &&
-                        (req.getSender().equals(user)
                                 ||
-                                req.getReceiver().equals(user)))
-                .toList();
-    }
+
+                                repository.findBySenderAndReceiver(receiver, sender)
+                                                .filter(req -> req.getStatus() != MatchStatus.REJECTED)
+                                                .isPresent();
+
+                if (alreadyExists) {
+
+                        throw new RuntimeException("Active match request already exists between users");
+                }
+
+                if (sender.getId().equals(receiver.getId())) {
+
+                        throw new RuntimeException("Cannot send request to yourself");
+                }
+
+                MatchRequest request = MatchRequest.builder()
+                                .sender(sender)
+                                .receiver(receiver)
+                                .status(MatchStatus.PENDING)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                System.out.println("Sending request to user ID: " + targetUserId);
+                repository.save(request);
+        }
+
+        @Override
+        public void acceptRequest(Long requestId) {
+
+                MatchRequest request = repository.findById(requestId)
+                                .orElseThrow();
+
+                if (request.getStatus() != MatchStatus.PENDING) {
+
+                        throw new RuntimeException("Request already processed");
+                }
+                request.setStatus(MatchStatus.ACCEPTED);
+
+                repository.save(request);
+        }
+
+        @Override
+        public void rejectRequest(Long requestId) {
+
+                MatchRequest request = repository.findById(requestId)
+                                .orElseThrow();
+                if (request.getStatus() != MatchStatus.PENDING) {
+
+                        throw new RuntimeException("Request already processed");
+                }
+                request.setStatus(MatchStatus.REJECTED);
+
+                repository.save(request);
+        }
+
+        @Override
+        public List<MatchRequest> getMyRequests() {
+
+                User receiver = getLoggedInUser();
+
+                return repository.findByReceiver(receiver);
+        }
+
+        @Override
+        public List<MatchRequest> getMyConnections() {
+
+                User user = getLoggedInUser();
+
+                return repository.findAll()
+                                .stream()
+                                .filter(req -> req.getStatus() == MatchStatus.ACCEPTED
+                                                &&
+                                                (req.getSender().equals(user)
+                                                                ||
+                                                                req.getReceiver().equals(user)))
+                                .toList();
+        }
 }
