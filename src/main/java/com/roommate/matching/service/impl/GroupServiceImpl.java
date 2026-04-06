@@ -14,6 +14,7 @@ import com.roommate.matching.entity.User;
 import com.roommate.matching.enums.MatchStatus;
 import com.roommate.matching.repository.GroupInvitationRepository;
 import com.roommate.matching.repository.GroupMembershipRepository;
+import com.roommate.matching.repository.MatchRequestRepository;
 import com.roommate.matching.repository.RoommateGroupRepository;
 import com.roommate.matching.repository.UserRepository;
 import com.roommate.matching.service.GroupService;
@@ -28,6 +29,7 @@ public class GroupServiceImpl implements GroupService {
     private final GroupMembershipRepository groupMembershipRepository;
     private final RoommateGroupRepository roommateGroupRepository;
     private final GroupInvitationRepository groupInvitationRepository;
+    private final MatchRequestRepository matchRequestRepository;
 
     private User getLoggedInUser() {
 
@@ -72,18 +74,67 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void inviteUser(Long userId) {
+
         User sender = getLoggedInUser();
 
         GroupMembership senderMembership = groupMembershipRepository.findByUser(sender)
                 .orElseThrow(() -> new RuntimeException("Join group first"));
 
         User receiver = userRepository.findById(userId)
-                .orElseThrow();
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // cannot invite yourself
+        if (sender.getId().equals(receiver.getId())) {
+
+            throw new RuntimeException(
+                    "Cannot invite yourself");
+        }
+
+        // receiver already in group
         if (groupMembershipRepository.findByUser(receiver).isPresent()) {
 
             throw new RuntimeException(
                     "User already in group");
+        }
+
+        // check if users are matched connections
+        boolean isConnected =
+
+                matchRequestRepository
+                        .findBySenderAndReceiverAndStatus(
+                                sender,
+                                receiver,
+                                MatchStatus.ACCEPTED)
+                        .isPresent()
+
+                        ||
+
+                        matchRequestRepository
+                                .findBySenderAndReceiverAndStatus(
+                                        receiver,
+                                        sender,
+                                        MatchStatus.ACCEPTED)
+                                .isPresent();
+
+        if (!isConnected) {
+
+            throw new RuntimeException(
+                    "User must be your matched connection before inviting");
+        }
+
+        // duplicate invite prevention
+        boolean inviteExists = groupInvitationRepository
+                .findByReceiver(receiver)
+                .stream()
+                .anyMatch(invite -> invite.getGroup()
+                        .equals(senderMembership.getGroup())
+                        &&
+                        invite.getStatus() == MatchStatus.PENDING);
+
+        if (inviteExists) {
+
+            throw new RuntimeException(
+                    "Invite already sent");
         }
 
         GroupInvitation invite = GroupInvitation.builder()
@@ -133,26 +184,81 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public void rejectInvite(Long inviteId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'rejectInvite'");
+
+        GroupInvitation invite = groupInvitationRepository.findById(inviteId)
+                .orElseThrow(() -> new RuntimeException("Invite not found"));
+
+        User loggedInUser = getLoggedInUser();
+
+        if (!invite.getReceiver().getId()
+                .equals(loggedInUser.getId())) {
+
+            throw new RuntimeException(
+                    "Not authorized to reject this invite");
+        }
+
+        if (invite.getStatus() != MatchStatus.PENDING) {
+
+            throw new RuntimeException(
+                    "Invite already processed");
+        }
+
+        invite.setStatus(MatchStatus.REJECTED);
+
+        groupInvitationRepository.save(invite);
     }
 
     @Override
     public RoommateGroup getMyGroup() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getMyGroup'");
+
+        User user = getLoggedInUser();
+
+        GroupMembership membership = groupMembershipRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException(
+                        "User not part of any group"));
+
+        return membership.getGroup();
     }
 
     @Override
     public List<GroupMembership> getGroupMembers() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getGroupMembers'");
+
+        User user = getLoggedInUser();
+
+        GroupMembership membership = groupMembershipRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException(
+                        "User not part of any group"));
+
+        RoommateGroup group = membership.getGroup();
+
+        return groupMembershipRepository.findByGroup(group);
     }
 
     @Override
     public void leaveGroup() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'leaveGroup'");
-    }
 
+        User user = getLoggedInUser();
+
+        GroupMembership membership = groupMembershipRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException(
+                        "User not part of any group"));
+
+        RoommateGroup group = membership.getGroup();
+
+        // If creator leaves → delete entire group
+        if (group.getCreatedBy().getId()
+                .equals(user.getId())) {
+
+            List<GroupMembership> members = groupMembershipRepository.findByGroup(group);
+
+            groupMembershipRepository.deleteAll(members);
+
+            roommateGroupRepository.delete(group);
+
+            return;
+        }
+
+        // Otherwise remove only this member
+        groupMembershipRepository.delete(membership);
+    }
 }

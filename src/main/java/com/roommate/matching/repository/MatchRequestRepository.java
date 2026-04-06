@@ -8,16 +8,22 @@ import org.springframework.stereotype.Repository;
 
 import com.roommate.matching.entity.MatchRequest;
 import com.roommate.matching.entity.User;
+import com.roommate.matching.enums.MatchStatus;
 
 @Repository
 public interface MatchRequestRepository
-        extends JpaRepository<MatchRequest, Long> {
+                extends JpaRepository<MatchRequest, Long> {
 
-    List<MatchRequest> findByReceiver(User receiver);
+        List<MatchRequest> findByReceiver(User receiver);
 
-    List<MatchRequest> findBySender(User sender);
+        List<MatchRequest> findBySender(User sender);
 
-    Optional<MatchRequest> findBySenderAndReceiver(
-            User sender,
-            User receiver);
+        Optional<MatchRequest> findBySenderAndReceiver(
+                        User sender,
+                        User receiver);
+
+        Optional<MatchRequest> findBySenderAndReceiverAndStatus(
+                        User sender,
+                        User receiver,
+                        MatchStatus status);
 }
