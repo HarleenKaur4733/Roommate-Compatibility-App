@@ -1,14 +1,27 @@
-# 🏠 Roommate Compatibility & Expense Sharing Platform (Backend)
+# 🏠 Roommate Compatibility & Shared Living Platform (Backend)
 
-A production-style **Java Spring Boot backend** for a roommate matching and shared living management platform.
+A **production-style Java Spring Boot backend** powering a roommate discovery and shared-living management platform.
 
-This system helps users:
+The system enables users to:
 
-* find compatible roommates
-* create shared groups
-* manage expenses
-* maintain trust-based profiles
-* securely authenticate using JWT-based stateless authentication
+```
+find compatible roommates
+send and accept match requests
+build roommate connections
+create structured lifestyle profiles
+receive compatibility-based suggestions
+securely authenticate using JWT-based stateless authentication
+```
+
+Future versions will support:
+
+```
+roommate group formation
+shared expense splitting (Splitwise-style)
+notifications system
+```
+
+This project is designed as a **real-world backend architecture portfolio project**, not a tutorial-level CRUD implementation.
 
 ---
 
@@ -16,16 +29,20 @@ This system helps users:
 
 ### Backend
 
-* Java 17
-* Spring Boot 3
-* Spring Security
-* Spring Data JPA
-* MySQL
-* JWT Authentication
+```
+Java 17
+Spring Boot 3
+Spring Security
+Spring Data JPA (Hibernate)
+MySQL
+JWT Authentication
+```
 
-### Architecture
+---
 
-Layered architecture:
+# 🏗 Architecture
+
+Clean layered architecture:
 
 ```
 controller
@@ -38,27 +55,30 @@ config
 exception
 ```
 
-Production-oriented structure followed from day one.
+Built following **production-oriented service-layer design principles**.
 
 ---
 
 # 🔐 Authentication System (Completed)
 
-Implemented a **stateless JWT-based authentication system** with refresh token support.
+Implemented a **stateless JWT authentication system with refresh-token lifecycle management**.
 
 ### Features
 
+```
 ✔ User Signup
 ✔ User Login
-✔ Password encryption using BCrypt
+✔ BCrypt password encryption
 ✔ Custom UserDetails implementation
 ✔ Custom UserDetailsService
 ✔ JWT Access Token generation
 ✔ Database-backed Refresh Token system
-✔ Stateless authentication (no session storage)
-✔ Route protection using JWT filter
-✔ SecurityFilterChain configuration
-✔ Role-based authentication support (USER / ADMIN ready)
+✔ Refresh token rotation
+✔ Stateless authentication (Session disabled)
+✔ JWT filter-based request validation
+✔ Route protection using SecurityFilterChain
+✔ Role-based authorization (USER / ADMIN)
+```
 
 ---
 
@@ -70,7 +90,7 @@ Implemented a **stateless JWT-based authentication system** with refresh token s
 POST /auth/signup
 ```
 
-Creates a new user with encrypted password.
+Creates new user with encrypted password.
 
 ---
 
@@ -97,10 +117,12 @@ Authorization: Bearer <access_token>
 
 JWT filter validates:
 
-* signature
-* expiry
-* ownership
-* role
+```
+token signature
+expiry
+user identity
+authorization role
+```
 
 ---
 
@@ -114,13 +136,116 @@ Uses stored refresh token to generate new access token.
 
 ---
 
+# 👤 Profile System (Completed)
+
+Supports structured roommate identity modeling.
+
+### Features
+
+```
+✔ Create profile
+✔ Update profile (partial update supported)
+✔ Get own profile
+✔ Admin: view all profiles
+✔ Admin: delete profiles
+```
+
+Profile fields:
+
+```
+name
+age
+occupation
+city
+bio
+```
+
+Separate from authentication entity (production-grade modeling decision).
+
+---
+
+# 🧬 Lifestyle Preferences Engine (Completed)
+
+Captures compatibility-related behavioral data.
+
+Stored using **enum-based modeling for safe matching logic**.
+
+### Preferences include
+
+```
+sleep schedule
+food habit
+cleanliness level
+work mode
+smoking preference
+drinking preference
+guest frequency
+budget range
+```
+
+Supports:
+
+```
+create preferences
+update preferences
+retrieve preferences
+```
+
+---
+
+# 🤝 Compatibility Matching Engine (Completed)
+
+Core feature of the platform.
+
+Generates compatibility scores between users based on lifestyle similarity.
+
+### Matching Logic Includes
+
+```
+exact match scoring
+flexible matching support (ANY preference)
+partial compatibility scoring
+budget similarity detection
+weighted scoring system (0–100)
+```
+
+Endpoint:
+
+```
+GET /matches/suggestions
+```
+
+Returns ranked roommate recommendations.
+
+---
+
+# 🔗 Match Request System (Completed)
+
+Implements roommate connection workflow similar to social platforms.
+
+### Features
+
+```
+✔ Send match request
+✔ Accept match request
+✔ Reject match request
+✔ Prevent duplicate requests
+✔ Prevent reverse duplicate requests
+✔ Prevent self-requests
+✔ Prevent unauthorized status updates
+✔ Retrieve incoming requests
+✔ Retrieve accepted roommate connections
+```
+
+Ensures **bidirectional connection integrity**.
+
+---
+
 # 🧱 Entities Implemented
 
 ### User
 
-Stores authentication details
-
-Fields:
+Authentication entity
 
 ```
 id
@@ -136,9 +261,7 @@ createdAt
 
 ### RefreshToken
 
-Stored in database for secure token lifecycle management
-
-Fields:
+Secure refresh-token lifecycle tracking
 
 ```
 id
@@ -149,41 +272,95 @@ expiryDate
 
 Supports:
 
-* logout capability
-* token revocation
-* future multi-device session handling
+```
+token revocation
+secure logout architecture
+future multi-device session handling
+```
+
+---
+
+### Profile
+
+User identity metadata
+
+```
+user
+name
+age
+occupation
+city
+bio
+```
+
+---
+
+### LifestylePreferences
+
+Compatibility engine input dataset
+
+```
+sleepSchedule
+foodHabit
+cleanlinessLevel
+workMode
+smokingPreference
+drinkingPreference
+guestFrequency
+budget
+```
+
+---
+
+### MatchRequest
+
+Connection lifecycle tracking
+
+```
+sender
+receiver
+status
+createdAt
+```
+
+Supports:
+
+```
+PENDING
+ACCEPTED
+REJECTED
+```
 
 ---
 
 # 🛡 Security Design Decisions
 
-This project uses:
-
 | Feature          | Strategy             |
 | ---------------- | -------------------- |
-| Access token     | JWT                  |
-| Refresh token    | Database stored UUID |
+| Access Token     | JWT                  |
+| Refresh Token    | Database stored UUID |
 | Sessions         | Disabled             |
-| Password storage | BCrypt hashing       |
+| Password Storage | BCrypt               |
 | Authentication   | CustomUserDetails    |
 | Authorization    | Role-based           |
+| API Protection   | JWT Filter           |
 
-Why DB refresh tokens?
+Database-backed refresh tokens enable:
 
-Supports:
+```
+secure logout
+token revocation
+future session tracking
+multi-device support
+```
 
-* secure logout
-* token revocation
-* session tracking
-* future multi-device login support
-
-Production-grade decision.
+Production-level security design.
 
 ---
 
 # 📦 APIs Implemented So Far
 
-### Auth Controller
+### Auth APIs
 
 ```
 POST /auth/signup
@@ -193,142 +370,117 @@ POST /auth/refresh-token
 
 ---
 
-# 🧪 Example Login Response
+### Profile APIs
 
 ```
-{
-  "accessToken": "...",
-  "refreshToken": "..."
-}
+POST /profile
+PUT /profile
+GET /profile/me
 ```
 
----
-
-# 🧭 Upcoming Features (Roadmap)
-
-### Phase 2 — Profile System
-
-User profile management
+Admin:
 
 ```
-name
-age
-occupation
-city
-bio
-profile photo
+GET /admin/profile/all
+DELETE /admin/profile/{id}
 ```
 
 ---
 
-### Phase 3 — Lifestyle Preferences Engine
-
-Used for compatibility scoring
+### Preferences APIs
 
 ```
-sleep schedule
-food habits
-cleanliness level
-budget range
-guest frequency
-noise tolerance
-work style
+POST /preferences
+PUT /preferences
+GET /preferences/me
 ```
 
 ---
 
-### Phase 4 — Compatibility Matching Engine
-
-Smart roommate suggestion system
+### Matching APIs
 
 ```
-compatibility score calculation
-weighted scoring logic
-match lifecycle tracking
-match status management
+GET /matches/suggestions
+POST /matches/request/{userId}
+PUT /matches/accept/{requestId}
+PUT /matches/reject/{requestId}
+GET /matches/my-requests
+GET /matches/my-connections
 ```
 
 ---
 
-### Phase 5 — Roommate Groups
+# 🧭 Upcoming Features (Next Phase)
 
-Multi-user living groups
+### Roommate Group System (In Progress)
 
 ```
 create group
-invite members
-join/leave group
-group roles
+invite matched users
+accept/reject invitations
+view group members
+leave group
+group lifecycle management
+```
+
+Supports transition from:
+
+```
+connection → shared living unit
 ```
 
 ---
 
-### Phase 6 — Expense Sharing System
+### Expense Sharing Engine (Planned)
 
-Splitwise-style functionality
+Splitwise-style shared expense tracking
 
 ```
-add expenses
-auto settlement calculation
-group balance tracking
-payment status updates
+add expense
+split equally/custom
+track balances
+settle payments
+group ledger tracking
 ```
+
+Major system capability upgrade.
 
 ---
 
-### Phase 7 — Notifications System
-
-Event-driven alerts
+# 🔔 Future Enhancements (Planned)
 
 ```
-match found
-group invite received
-expense added
-settlement pending
-```
-
----
-
-### Phase 8 — Trust & Safety Layer
-
-Profile credibility system
-
-```
-profile completeness score
-user reviews
-report system
-verification badges
-```
-
----
-
-# 🧠 Long-Term Enhancements (Planned)
-
-```
-multi-device session support
 email verification workflow
-image upload support (AWS S3)
-Redis caching
+profile image upload (AWS S3)
+Redis caching layer
 rate limiting
 admin moderation dashboard
 Docker deployment
 CI/CD pipeline integration
+notification system
 ```
 
 ---
 
 # 🎯 Project Goal
 
-This project is designed as a **production-style portfolio backend** demonstrating:
-
-* secure authentication architecture
-* scalable entity relationships
-* clean layered design
-* real-world feature modeling
-* REST API best practices
-
-Target role:
+This project demonstrates **production-oriented backend engineering skills**:
 
 ```
-Java Backend Engineer / Full Stack Developer
+secure authentication architecture
+stateless JWT security implementation
+enum-driven domain modeling
+recommendation engine design
+relationship lifecycle workflows
+layered service architecture
+REST API best practices
+```
+
+Target roles:
+
+```
+Java Backend Engineer
+Spring Boot Developer
+Full Stack Developer
+Software Development Engineer (SDE)
 ```
