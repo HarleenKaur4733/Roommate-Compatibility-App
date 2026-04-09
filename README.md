@@ -484,3 +484,9 @@ Spring Boot Developer
 Full Stack Developer
 Software Development Engineer (SDE)
 ```
+
+Fixes to be added later:
+
+1. Instead of returning Profile, getAllProfile should return ProfileDTO which should contain UserDTO, to avoid exposing password
+2. Create city preference
+3. Feature to add profile pic

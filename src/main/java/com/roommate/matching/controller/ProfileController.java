@@ -1,5 +1,7 @@
 package com.roommate.matching.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,5 +44,12 @@ public class ProfileController {
 
         return ResponseEntity.ok(
                 profileService.getMyProfile());
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<Profile>> getAllProfiles() {
+
+        return ResponseEntity.ok(
+                profileService.getAllProfiles());
     }
 }
