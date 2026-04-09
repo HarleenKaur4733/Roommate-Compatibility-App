@@ -27,12 +27,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         protected void doFilterInternal(
                         HttpServletRequest request,
                         HttpServletResponse response,
-                        FilterChain filterChain) throws ServletException, IOException {
+                        FilterChain filterChain)
+                        throws ServletException, IOException {
+
+                String path = request.getServletPath();
+
+                // Skip auth endpoints
+                if (path.startsWith("/auth/")) {
+                        filterChain.doFilter(request, response);
+                        return;
+                }
 
                 final String authHeader = request.getHeader("Authorization");
 
-                if (authHeader == null ||
-                                !authHeader.startsWith("Bearer ")) {
+                if (authHeader == null || !authHeader.startsWith("Bearer ")) {
 
                         filterChain.doFilter(request, response);
                         return;
@@ -40,31 +48,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 String token = authHeader.substring(7);
 
-                String email = jwtUtil.extractEmail(token);
+                try {
 
-                if (email != null &&
-                                SecurityContextHolder
-                                                .getContext()
-                                                .getAuthentication() == null) {
+                        String email = jwtUtil.extractEmail(token);
 
-                        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                        if (email != null &&
+                                        SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                        if (jwtUtil.validateToken(token, userDetails.getUsername())) {
+                                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-                                // SecurityContextHolder expects an Authentication object
-                                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                                userDetails,
-                                                null,
-                                                userDetails.getAuthorities());
+                                if (jwtUtil.validateToken(token, userDetails.getUsername())) {
 
-                                authToken.setDetails(
-                                                new WebAuthenticationDetailsSource()
-                                                                .buildDetails(request));
+                                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                                        userDetails,
+                                                        null,
+                                                        userDetails.getAuthorities());
 
-                                SecurityContextHolder
-                                                .getContext()
-                                                .setAuthentication(authToken);
+                                        authToken.setDetails(
+                                                        new WebAuthenticationDetailsSource()
+                                                                        .buildDetails(request));
+
+                                        SecurityContextHolder
+                                                        .getContext()
+                                                        .setAuthentication(authToken);
+                                }
                         }
+
+                } catch (Exception e) {
+
+                        // Ignore expired / invalid token silently
+                        System.out.println("JWT invalid or expired: " + e.getMessage());
+
                 }
 
                 filterChain.doFilter(request, response);
