@@ -15,4 +15,7 @@ public interface MatchRequestService {
     List<MatchRequest> getMyRequests();
 
     List<MatchRequest> getMyConnections();
+
+    List<MatchRequest> getRequestsSent();
+
 }

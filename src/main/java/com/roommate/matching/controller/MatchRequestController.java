@@ -44,7 +44,7 @@ public class MatchRequestController {
     }
 
     @GetMapping("/my-requests")
-    public ResponseEntity<?> getRequests() {
+    public ResponseEntity<?> getRequestsReceived() {
 
         return ResponseEntity.ok(
                 service.getMyRequests());
@@ -55,5 +55,12 @@ public class MatchRequestController {
 
         return ResponseEntity.ok(
                 service.getMyConnections());
+    }
+
+    @GetMapping("/get-requests-sent")
+    public ResponseEntity<?> getRequestsSent() {
+
+        return ResponseEntity.ok(
+                service.getRequestsSent());
     }
 }

@@ -129,4 +129,17 @@ public class MatchRequestServiceImpl
                                                                 req.getReceiver().equals(user)))
                                 .toList();
         }
+
+        @Override
+        public List<MatchRequest> getRequestsSent() {
+
+                User user = getLoggedInUser();
+
+                return repository.findAll()
+                                .stream()
+                                .filter(req -> req.getStatus() == MatchStatus.PENDING
+                                                &&
+                                                (req.getSender().equals(user)))
+                                .toList();
+        }
 }
