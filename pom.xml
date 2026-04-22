@@ -12,6 +12,7 @@
 	<groupId>com.roommate</groupId>
 	<artifactId>matching</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
 	<name>matching</name>
 	<description/>
 	<url/>
